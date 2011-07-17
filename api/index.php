@@ -1,20 +1,26 @@
 <?
+header('Cache-Control: no-cache, must-revalidate');
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Content-type: application/json');
 
 
 include('functions.php');
 
+if (isset($_GET['lat'])){
+	
+	$lat=$_GET['lat']; 
+	$lng=$_GET['lng'];  
+}
 
-$lat = '51.5272885';
-$lng = '-0.0556403';
+else {
+	$lat = '51.5293312';
+	$lng = '-0.0559076';
+}
 
-fourSquare($lat, $lng); 
+$json['flickr'] 			= flickr($lat, $lng);
+$json['fourSquareTips']		= fourSquareTips($lat, $lng);
+$json['fourSquareCheckins'] = fourSquareCheckins($lat, $lng);
 
-
-
-
-
-
-
-
+echo (json_encode($json)); 
 
 ?>
