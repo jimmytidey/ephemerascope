@@ -15,16 +15,14 @@ function fourSquare($lat, $lng) {
 }
 
 function urlToJson($url) 
-{
-	print_r($url);
-
-	echo ('sdf')
+{	
+	
+	print($url);
 	//echo $url;
-	$ch = curl_init(); 	
+	$ch = curl_init();
 	
 	// set URL to download
 	curl_setopt($ch, CURLOPT_URL, $url);
-	
 	
 	// should curl return or print the data? true = return, false = print
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -34,9 +32,8 @@ function urlToJson($url)
 	
 	// download the given URL, and return output
 	$output = curl_exec($ch);
-	
-	print_r($output);
-	
+
+	print_r($output);	
 }
 
 
