@@ -6,16 +6,19 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title>Page Title</title> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.css" />
+	<link rel="stylesheet" href="style/style.css" />
 	<script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.js"></script>
 	<script src="script/script.js"></script>
-	<script src="script/foursquare.js"></script>
+	<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=true&amp;key=ABQIAAAAtMGi9FIBTgJEO7_c1ZK0JRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQzNGXo5BiYmSbnJ18mxJIrw9AhGg" type="text/javascript"></script>	
+	<script src="script/mapstraction.js"></script>
+
 </head> 
 
 
 <body> 
 
-<div data-role="page">
+<div data-role="page" id='home_page'>
 
 	<div data-role="header">
 		<a href="index.html" data-icon="arrow-l" data-ajax="false">List</a>
@@ -23,7 +26,9 @@
 	</div><!-- /header -->
 
 	<div data-role="content">	
-		<p>Some Content</p>
+			
+		<div id="map_canvas" ></div>
+		
 	</div><!-- /content -->
 	
 	<div data-role="footer">

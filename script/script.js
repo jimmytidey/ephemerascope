@@ -1,38 +1,63 @@
 var Scope = new Object(); 
 
-//add location properties 
-function locate(position) {	
+Scope.apiEndPoint = '/ephemerascope/api/index.php';
 
+Scope.locate = function(position) {	
+	
+	//get the coords 
+    Scope.lat =  position.coords.latitude;
+    Scope.lng =  position.coords.longitude;
+	
+	//centre the map 
+	var myPoint = new LatLonPoint(Scope.lat, Scope.lng);
+	Scope.map.setCenterAndZoom(myPoint, 13);
+	
+	//get some data to put on the maps
+	var url = Scope.apiEndPoint+'?lat='+Scope.lat+'&lng='+Scope.lng; 
+	$.getJSON(url, function(data) {
+		Scope.processData(data);
+	});
 }
 
-//function for harvesting tweets
-Scope.getTweets = function() {
-	
-	
-} 
+Scope.processData = function(data) {
+	Scope.locations = eval(data); 
 
-//function for harvesting foursquare tips 
-Scope.getFoursquare = function() {
-	var client = new FourSquareClient("G0NWAS1PB1W0YFU1K0XCRV1MINS2SMCGQT2UQVLFVNA0VOPO", "BLKD4BER4VFW0TCLAHQ4KLQI5MBMNVMZTYHLELRXBEBSBB25", "http://jimmytidey.co.uk");
-	
-	client.tipsClient.search(
-	       function(response)
-	       {
-	           alert('hi');
-	       },
-		51, 0
-	);
+	$.each(Scope.locations, function(key, val) {		
+		
+		if (val == 'flickr') {
+			$.each(val, function(key, val) {
+				
+				alert(val.date);
+			});
+		} 
+	});
+}
+
+Scope.drawMap = function() {
+
+	Scope.map = new Mapstraction('map_canvas', 'openstreetmap');
+
+	var myPoint = new LatLonPoint(51.456708, -0.101163);
+
+	Scope.map.setCenterAndZoom(myPoint, 13);
+
+	Scope.map.addControls({
+		pan: true, 
+		zoom: 'small',
+		map_type: true 
+	});	
 }
 
 
-//function for harvesting flickr images 
-Scope.getFlickr = function() {
+//initialise page 
+$('#home_page').live('pageshow', function() { 
+	//put the map on the page 
+	Scope.drawMap();
 	
-	
-}
+	//find out the location 	
+	navigator.geolocation.getCurrentPosition(Scope.locate);
 
-//function for harvesting flickr images 
-Scope.getFlickr = function() {
-	
-	
-}
+});		
+
+
+ 
