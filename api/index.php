@@ -6,8 +6,7 @@ header('Content-type: application/json');
 
 include('functions.php');
 
-if (isset($_GET['lat'])){
-	
+if (isset($_GET['lat'])) {
 	$lat=$_GET['lat']; 
 	$lng=$_GET['lng'];  
 }
@@ -15,6 +14,7 @@ if (isset($_GET['lat'])){
 else {
 	$lat = '51.5293312';
 	$lng = '-0.0559076';
+	$json['test_mode'] ='true';
 }
 
 $json['flickr'] 			= flickr($lat, $lng);
