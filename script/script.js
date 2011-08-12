@@ -3,29 +3,23 @@ Scope = new Object();
 Scope.apiEndPoint = '/ephemerascope/api/index.php';
 
 
-//function for harvesting tweets
-Scope.getTweets = function() {
+Scope.scan = function() {
+	Scope.scanTweets();
+	Scope.scanApi();
+}
 
+Scope.scanTweets = function() {
+	
 } 
 
-var map = new GMap2(document.getElementById("map_canvas"));
-
-Scope.locate = function(position) {	
-	
-	//get the coords 
-    Scope.lat =  position.coords.latitude;
-    Scope.lng =  position.coords.longitude;
-	
-	//centre the map 
-	var myPoint = new LatLonPoint(Scope.lat, Scope.lng);
-	Scope.map.setCenterAndZoom(myPoint, 13);
-	
-	//get some data to put on the maps
+Scope.scanApi = function() {
 	var url = Scope.apiEndPoint+'?lat='+Scope.lat+'&lng='+Scope.lng; 
 	$.getJSON(url, function(data) {
-		Scope.processData(data);
-	});
-}
+		Scope.apiData = eval(data);
+		alert('hi');
+	});	
+} 
+
 
 Scope.processData = function(data) {
 	Scope.locations = eval(data); 
@@ -41,11 +35,15 @@ Scope.processData = function(data) {
 	});
 }
 
-Scope.drawMap = function() {
+Scope.drawMap = function(position) {	
+	
+	//get the coords 
+    Scope.lat =  position.coords.latitude;
+    Scope.lng =  position.coords.longitude;	
 
 	Scope.map = new Mapstraction('map_canvas', 'openstreetmap');
 
-	var myPoint = new LatLonPoint(51.456708, -0.101163);
+	var myPoint = new LatLonPoint(Scope.lat, Scope.lng);
 
 	Scope.map.setCenterAndZoom(myPoint, 13);
 
@@ -54,16 +52,18 @@ Scope.drawMap = function() {
 		zoom: 'small',
 		map_type: true 
 	});	
+	
+	Scope.map.isLoaded(Scope.scan());
 }
 
 
 //initialise page 
 $('#home_page').live('pageshow', function() { 
 	//put the map on the page 
-	Scope.drawMap();
+
 	
 	//find out the location 	
-	navigator.geolocation.getCurrentPosition(Scope.locate);
+	navigator.geolocation.getCurrentPosition(Scope.drawMap);
 
 });		
 
