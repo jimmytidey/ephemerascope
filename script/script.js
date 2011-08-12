@@ -12,28 +12,27 @@ Scope.scanTweets = function() {
 	
 } 
 
+
+//adds everything apart from Twitter, which I'm doing separately 
 Scope.scanApi = function() {
 	var url = Scope.apiEndPoint+'?lat='+Scope.lat+'&lng='+Scope.lng; 
 	$.getJSON(url, function(data) {
+		
 		Scope.apiData = eval(data);
-		alert('hi');
+		
+		//foursquare tips 
+		$.each(Scope.apiData['fourSquareTips'], function(index, value) { 
+			Scope.addMarker(value.lat, value.lng, value['name']); 		
+		});
+
+		//flickr 
+		$.each(Scope.apiData['flickr'], function(index, value) { 
+			Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />"); 		
+		});
+		
 	});	
 } 
 
-
-Scope.processData = function(data) {
-	Scope.locations = eval(data); 
-
-	$.each(Scope.locations, function(key, val) {		
-		
-		if (val == 'flickr') {
-			$.each(val, function(key, val) {
-				
-				alert(val.date);
-			});
-		} 
-	});
-}
 
 Scope.drawMap = function(position) {	
 	
@@ -45,7 +44,7 @@ Scope.drawMap = function(position) {
 
 	var myPoint = new LatLonPoint(Scope.lat, Scope.lng);
 
-	Scope.map.setCenterAndZoom(myPoint, 13);
+	Scope.map.setCenterAndZoom(myPoint, 17);
 
 	Scope.map.addControls({
 		pan: true, 
@@ -67,5 +66,21 @@ $('#home_page').live('pageshow', function() {
 
 });		
 
+
+Scope.addMarker = function advancedMarker(lat, lng, info) {
+	Scope.map.addMarkerWithData(new mxn.Marker( new mxn.LatLonPoint(lat, lng)),{
+        infoBubble : info,
+        label : info,
+        date : "new Date()",
+        marker : 4,
+        iconShadow: "http://mapufacture.com/images/providers/blank.png",
+        iconShadowSize : [0,0],
+        icon : "http://assets1.mapufacture.com/images/markers/usgs_marker.png",
+        iconSize : [20,20],
+        draggable : false,
+        hover : true
+    });
+    
+}
 
  
