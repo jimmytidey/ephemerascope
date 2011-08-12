@@ -2,8 +2,6 @@ Scope = new Object();
 
 Scope.apiEndPoint = '/ephemerascope/api/index.php';
 
-<<<<<<< HEAD
-}
 
 //function for harvesting tweets
 Scope.getTweets = function() {
@@ -12,7 +10,6 @@ Scope.getTweets = function() {
 
 var map = new GMap2(document.getElementById("map_canvas"));
 
-=======
 Scope.locate = function(position) {	
 	
 	//get the coords 
@@ -72,4 +69,3 @@ $('#home_page').live('pageshow', function() {
 
 
  
->>>>>>> d68f6dc21d64881a2154587dde2cb4b1b28f9292
