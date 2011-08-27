@@ -60,7 +60,6 @@ function fourSquareTips($lat, $lng) {
 
 function flickr($lat, $lng) {
 	
-	
 	$a_year_ago = time()-15556926; 
 	
 	$flickr_url = "http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=".FLICKR_KEY;
