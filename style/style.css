@@ -1,16 +1,8 @@
 #map_canvas { 
-	width:580px;
+	width:380px;
 	height:400px;
 	margin-top:110px;
 	margin-left:100px;
-}
-
-.ui-content {
-	height:700px;
-}
-
-#home_page {
-	width:768px;
 }
 
 #loader {
