@@ -200,7 +200,7 @@ $('#home_page').live('pageshow', function() {
 	
 	    navigator.geolocation.getCurrentPosition(
 	        function(position) {
-				alert('sucess');
+				Scope.drawLocationMap(); 
 	        },
 	        function errorCallback(error) {
 				alert("Your HTML 5 geolocation isn't woking");
