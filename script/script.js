@@ -153,8 +153,7 @@ Scope.getDirections = function()  {
 
 
 Scope.drawLocationMap = function(position) {	
-	
-	
+
 	//get the coords 
     Scope.lat =  position.coords.latitude;
     Scope.lng =  position.coords.longitude;	
@@ -200,7 +199,7 @@ $('#home_page').live('pageshow', function() {
 	
 	    navigator.geolocation.getCurrentPosition(
 	        function(position) {
-				Scope.drawLocationMap(); 
+				Scope.drawLocationMap(position); 
 	        },
 	        function errorCallback(error) {
 				alert("Your HTML 5 geolocation isn't woking");
