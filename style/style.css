@@ -1,17 +1,23 @@
 #map_canvas { 
 	width:580px;
-	height:700px;
-	margin-top:130px;
+	height:400px;
+	margin-top:110px;
+	margin-left:100px;
 }
 
 .ui-content {
-	height:900px;
+	height:700px;
 }
 
 #home_page {
 	width:768px;
 }
 
+#loader {
+	left: 280px;
+    position: absolute;
+    top: 97px;
+}
 
 /* style for map elements */ 
 
