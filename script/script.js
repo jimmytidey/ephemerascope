@@ -195,6 +195,10 @@ Scope.drawLondonMap = function() {
 //initialise page 
 $('#home_page').live('pageshow', function() { 
 	
+	$('#wine_glass').click(function() {
+		Scope.scan();
+	});
+		
 	if (navigator.geolocation) {
 	
 	    navigator.geolocation.getCurrentPosition(
@@ -218,10 +222,6 @@ $('#home_page').live('pageshow', function() {
 		Scope.drawLondonMap();
 	}	
 
-
-	$('#wine_glass').click(function() {
-		Scope.scan();
-	});
 });		
 
 
