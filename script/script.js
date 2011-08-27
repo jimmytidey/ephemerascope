@@ -52,28 +52,46 @@ Scope.scanApi = function() {
 			Scope.pointsLat.push(value.lat);
 			Scope.pointsLng.push(value.lng);	
 		});
-		
-		Scope.wayPoints[0] = [Scope.pointsLat.min(), Scope.pointsLng.min()]; 
-		Scope.wayPoints[1] = [Scope.pointsLat.min(), Scope.pointsLng.max()]; 
-		Scope.wayPoints[2] = [Scope.pointsLat.max(), Scope.pointsLng.max()]; 
-		Scope.wayPoints[3] = [Scope.pointsLat.max(), Scope.pointsLng.min()]; 
-		Scope.wayPoints[4] = [Scope.pointsLat.min(), Scope.pointsLng.min()]; 
-		
-		var myPoly = new Polyline([
-		new LatLonPoint(Scope.wayPoints[0][0],Scope.wayPoints[0][1]),
-		new LatLonPoint(Scope.wayPoints[1][0],Scope.wayPoints[1][1]),
-		new LatLonPoint(Scope.wayPoints[2][0],Scope.wayPoints[2][1]),
-		new LatLonPoint(Scope.wayPoints[3][0],Scope.wayPoints[3][1]),
-		new LatLonPoint(Scope.wayPoints[4][0],Scope.wayPoints[4][1])
-		]);
-		
-		Scope.map.addPolyline(myPoly);
+	
+		Scope.getDirections(); 
 	
 	});	
 	
-	
-	
 } 
+
+
+Scope.getDirections = function()  {
+
+	//work out some way points 
+	Scope.wayPoints[0] = Scope.pointsLat.min()+","+Scope.pointsLng.min(); 
+	Scope.wayPoints[1] = Scope.pointsLat.min()+","+Scope.pointsLng.max(); 
+	Scope.wayPoints[2] = Scope.pointsLat.max()+","+Scope.pointsLng.max(); 
+	Scope.wayPoints[3] = Scope.pointsLat.max()+","+Scope.pointsLng.min(); 
+	Scope.wayPoints[4] = Scope.pointsLat.min()+","+Scope.pointsLng.min(); 
+	
+	var directionsEndPoint = "api/directions.php?";
+	var wayPointString = Scope.wayPoints.join('|');
+	 
+	var directionsQuery ="origin="+Scope.wayPoints[0]+"&destination="+Scope.wayPoints[3]+"&waypoints="+wayPointString+"&sensor=true";
+	var directionsUrl = directionsEndPoint + directionsQuery; 
+	
+	$.getJSON(directionsUrl,  function(directionsData) {
+		Scope.directionsData = eval(directionsData);
+		
+		var waypoints = new Array();
+		
+		$.each(Scope.directionsData['routes'][0]['legs'], function(index, value) { 
+		 	waypoints.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
+		});
+		
+		var myPoly = new Polyline(waypoints);
+		
+		Scope.map.addPolyline(myPoly);
+	});
+	
+
+
+}
 
 
 Scope.drawLocationMap = function(position) {	

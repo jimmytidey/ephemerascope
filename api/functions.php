@@ -1,13 +1,12 @@
 <?
 
-function fourSquareCheckins($lat, $lng) {
+include('api_keys.php');
 
-	$api_key['client_id'] = 'G0NWAS1PB1W0YFU1K0XCRV1MINS2SMCGQT2UQVLFVNA0VOPO';
-	$api_key['client_secret'] = 'BLKD4BER4VFW0TCLAHQ4KLQI5MBMNVMZTYHLELRXBEBSBB25'; 
+function fourSquareCheckins($lat, $lng) {
 		
 	//return foursquare venues 
 	$foursquare_venues_url = 'https://api.foursquare.com/v2/venues/search';
-	$query_url = $foursquare_venues_url."?ll=$lat,$lng&client_id=".$api_key['client_id']."&client_secret=".$api_key['client_secret'];	
+	$query_url = $foursquare_venues_url."?ll=$lat,$lng&client_id=".FOURSQUARE_CLIENT_ID."&client_secret=".FOURSQUARE_CLIENT_SECRET;	
 	$result = urlToJson($query_url);
 	$trimmed_result = $result->response->groups['0']->items;
 	
@@ -30,13 +29,10 @@ function fourSquareCheckins($lat, $lng) {
 }
 
 function fourSquareTips($lat, $lng) {
-
-	$api_key['client_id'] = 'G0NWAS1PB1W0YFU1K0XCRV1MINS2SMCGQT2UQVLFVNA0VOPO';
-	$api_key['client_secret'] = 'BLKD4BER4VFW0TCLAHQ4KLQI5MBMNVMZTYHLELRXBEBSBB25'; 
 		
 	//return foursquare venues 
 	$foursquare_venues_url = 'https://api.foursquare.com/v2/tips/search';
-	$query_url = $foursquare_venues_url."?ll=$lat,$lng&client_id=".$api_key['client_id']."&client_secret=".$api_key['client_secret'];	
+	$query_url = $foursquare_venues_url."?ll=$lat,$lng&client_id=".FOURSQUARE_CLIENT_ID."&client_secret=".FOURSQUARE_CLIENT_SECRET;	
 	$result = urlToJson($query_url);
 	
 
@@ -63,12 +59,11 @@ function fourSquareTips($lat, $lng) {
 
 
 function flickr($lat, $lng) {
-	$api_key['key'] 	= "0989f78544fb0ab54b3c8d1b65a4258f";
-	$api_key['secret'] 	= "0812e795318315df";
+	
 	
 	$a_year_ago = time()-15556926; 
 	
-	$flickr_url = "http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=".$api_key['key'] ;
+	$flickr_url = "http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=".FLICKR_KEY;
 	
 	$query_url = $flickr_url."&lat=$lat&lon=$lng&radius=1&extras=description%2C+url_m%2C+geo%2Cdate_taken%2C+owner_name%2C&min_taken_date=$a_year_ago&format=json&nojsoncallback=1";	
 	
@@ -99,15 +94,28 @@ function flickr($lat, $lng) {
 
 
 function twitter($lat, $lng) {
+
 	
+}
+
+function googleDirections() {
 	
+	$origin 		= addslashes($_GET['origin']);
+	$destination 	= addslashes($_GET['destination']);
+	$waypoints	 	= addslashes($_GET['waypoints']);
+	
+	$directions_url = "http://maps.googleapis.com/maps/api/directions/json?";
+	$query_url 		= "origin=".$origin."&destination=".$destination."&waypoints=".$waypoints."&mode=walking&sensor=true";
+	
+	$url = $directions_url.$query_url;
+	
+	$result 		= urlToJson($url);
+	return($result);
 }
 
 	
 
-function urlToJson($url) 
-{	
-	
+function urlToJson($url) {	
 
 	$ch = curl_init();
 	
