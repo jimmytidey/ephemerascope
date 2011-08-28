@@ -33,6 +33,8 @@
 		
 		<div id="map_canvas"></div>
 		
+		<div id='directions'></div>
+
 		<center>
 			<a data-role="button" data-inline="true" id='wine_glass'>Wine Glass</a>
 		</center>
@@ -40,7 +42,7 @@
 	</div><!-- /content -->
 	
 	<div data-role="footer">
-		<h4>Footer content</h4>
+		<h4>Ephemera-scope</h4>
 	</div><!-- /footer -->
 	
 </div><!-- /page -->

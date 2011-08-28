@@ -35,7 +35,7 @@ Scope.scanApi = function() {
 	$('#loader').html('<img src="resources/ajax-loader.gif" alt="loader" />');
 	
 	//zoom in beacuse we can only search a small area 
-	Scope.map.setZoom(16);
+	Scope.map.setZoom(15);
 	
 	Scope.mapCenter = Scope.map.getCenter(); 
 	
@@ -48,7 +48,7 @@ Scope.scanApi = function() {
 		
 		//foursquare tips 
 		$.each(Scope.apiData['fourSquareTips'], function(index, value) { 
-			Scope.addMarker(value.lat, value.lng, value['name']);	
+			Scope.addMarker(value.lat, value.lng, value['name'], "blue");	
 			
 			value['point_type'] = "foursquare"; 
 			
@@ -62,7 +62,7 @@ Scope.scanApi = function() {
 
 		//flickr 
 		$.each(Scope.apiData['flickr'], function(index, value) { 
-			Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />");
+			Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />", "red");
 			
 			value['point_type'] = "flickr";	
 			
@@ -75,13 +75,12 @@ Scope.scanApi = function() {
 		});
 	
 		Scope.getDirections(); 
-	
 	});	
 	
 } 
 
 
-Scope.getDirections = function()  {
+Scope.getDirections = function() {
 	
 	//sort the arrays into quadrants
 	$.each(Scope.allPoints, function (index,value) {
@@ -93,36 +92,36 @@ Scope.getDirections = function()  {
 
 	Scope.topRight.sort(function(a,b) {
 		// assuming distance is always a valid integer
-		return parseInt(b.distance) - parseInt(a.distance);
+		return (b.radial_distance) - (a.radial_distance);
 	});
 	
 	Scope.bottomRight.sort(function(a,b) {
 		// assuming distance is always a valid integer
-		return parseInt(b.distance) - parseInt(a.distance);
+		return (b.radial_distance) - (a.radial_distance);
 	});
 	
 	Scope.bottomLeft.sort(function(a,b) {
 		// assuming distance is always a valid integer
-		return parseInt(b.distance) - parseInt(a.distance);
+		return (b.radial_distance) - (a.radial_distance);
 	});
 
 	Scope.topLeft.sort(function(a,b) {
 		// assuming distance is always a valid integer
-		return parseInt(b.distance) - parseInt(a.distance);
+		return (b.radial_distance) - (a.radial_distance);
 	});	
-			
+	
 	Scope.wayPoints.push(Scope.topRight[0]['lat']+","+Scope.topRight[0]['lng']);
 	Scope.wayPoints.push(Scope.bottomRight[0]['lat']+","+Scope.bottomRight[0]['lng']);
 	Scope.wayPoints.push(Scope.bottomLeft[0]['lat']+","+Scope.bottomLeft[0]['lng']);
 	Scope.wayPoints.push(Scope.topLeft[0]['lat']+","+Scope.topLeft[0]['lng']);
 	
-	/*
+	
 	//test those markers...
-	Scope.addMarker(Scope.topRight[0]['lat'], Scope.topRight[0]['lng'], 'top right');
-	Scope.addMarker(Scope.bottomRight[0]['lat'], Scope.bottomRight[0]['lng'], 'bottom right ');
-	Scope.addMarker(Scope.bottomLeft[0]['lat'], Scope.bottomLeft[0]['lng'], 'bottom left');
-	Scope.addMarker(Scope.topLeft[0]['lat'], Scope.topLeft[0]['lng'], 'top left');
-	*/
+	Scope.addMarker(Scope.mapCenter.lat, Scope.mapCenter.lng, 'centre ', "purple");
+	Scope.addMarker(Scope.bottomRight[0]['lat'], Scope.bottomRight[0]['lng'], 'bottom right ', "purple");
+	Scope.addMarker(Scope.bottomLeft[0]['lat'], Scope.bottomLeft[0]['lng'], 'bottom left', "purple");
+	Scope.addMarker(Scope.topLeft[0]['lat'], Scope.topLeft[0]['lng'], 'top left', "purple");
+	Scope.addMarker(Scope.topRight[0]['lat'], Scope.topRight[0]['lng'], 'top left', "purple");
 	
 	var wayPointString = escape(Scope.wayPoints.join('|'));
 	
@@ -136,21 +135,101 @@ Scope.getDirections = function()  {
 		
 		var waypoints = new Array();
 		
+		$('#directions').html(""); //get rid of any existing directions
+		
 		$.each(Scope.directionsData['routes'][0]['legs'], function(index, value) { 
-	 		$.each(value['steps'], function(index, value) {
-				waypoints.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
+	 		
+			waypoints.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
+			
+			//write the directions into a list 
+			$('#directions').append(value.html_instructions+"<br/><hr/>"); 
+			
+			photos = Scope.locatePhotosOnPath.search(value['start_location']['lat'], value['start_location']['lng'], value['end_location']['lat'], value['end_location']['lng'], value['distance']['value']);
+			
+			$.each(photos, function (index, value) {
+				
+				$('#directions').append("<img src='"+value['url']+"' height='140' />");
 			});
+			
+			$('#directions').append("<br/><hr/>");
+			
 		});
 		
 		var myPoly = new Polyline(waypoints);
 		
 		Scope.map.addPolyline(myPoly);
 	});
-	
-
-
 }
 
+Scope.locatePhotosOnPath = new Object(); 
+
+Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_lng, distance) {
+  
+
+	Scope.locatePhotosOnPath.return_array = new Array(); 
+	
+	Scope.locatePhotosOnPath.distance = distance; 
+
+	if (((end_lat - start_lat)!= 0) && ((end_lng - start_lng != 0))) { //use this method if the start and begining coords are not the same 
+		
+		console.info("Processing as a line");
+		
+		Scope.locatePhotosOnPath.gradient = (end_lng - start_lng) / (end_lat - start_lat); //gcse maths here I come 
+	
+		console.info("gradient = "+ Scope.locatePhotosOnPath.gradient);
+		
+		if (isNaN(Scope.gradient)) {Scope.locatePhotosOnPath.gradient = 0.5; console.info("grad didn't calculate - set to 0.5");};
+	
+		Scope.locatePhotosOnPath.offset   = end_lat/Scope.gradient*end_lng; 
+	
+		console.info("offset = "+ Scope.locatePhotosOnPath.ofdset); 
+
+		$.each(Scope.allPoints, function (index, value) {
+		
+			
+	
+			if (value.lat > (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset - 0.005) { //lower bound 
+				if (value.lat < (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset + 0.005) { //upper bound 
+					Scope.locatePhotosOnPath.return_array.push(value); 
+				}
+			}
+	
+		});
+	}
+	
+	else { //this is just a point 
+		
+		console.info("Processing as a point"); 
+		
+		if (distance == 0 ) {distance = 100;} 
+			
+		Scope.locatePhotosOnPath.degree_radius = distance / 104606;
+		
+		console.info("distance in decimal degress =  "+ Scope.locatePhotosOnPath.degree_radius ); 
+		
+		$.each(Scope.allPoints, function (index, value) {
+		
+			return_array = new Array();
+			
+			var lat_sqr = Math.pow((start_lat - value.lat),  2);
+			var lng_sqr = Math.pow((start_lng - value.lng),  2);
+			var radial_disance =  Math.pow(lat_sqr + lng_sqr,  0.5);
+			
+			console.info("radial distance of this particular point =  "+ radial_disance); 
+			
+			
+			if (radial_disance < Scope.locatePhotosOnPath.degree_radius) { //lower bound 
+				Scope.locatePhotosOnPath.return_array.push(value); 
+			}
+		
+			
+		});
+				
+	}	
+	
+	return Scope.locatePhotosOnPath.return_array; 
+
+}
 
 Scope.drawLocationMap = function(position) {	
 
@@ -206,7 +285,7 @@ $('#home_page').live('pageshow', function() {
 				Scope.drawLocationMap(position); 
 	        },
 	        function errorCallback(error) {
-				alert("Your HTML 5 geolocation isn't woking");
+				//alert("Your HTML 5 geolocation isn't woking");
 				Scope.drawLondonMap(); 
 	        },
 	        {
@@ -218,14 +297,14 @@ $('#home_page').live('pageshow', function() {
 	} 
 
 	else {
-		alert("Your HTML 5 geolocation isn't woking");
+		//	alert("Your HTML 5 geolocation isn't woking");
 		Scope.drawLondonMap();
 	}	
 
 });		
 
 
-Scope.addMarker = function advancedMarker(lat, lng, info) {
+Scope.addMarker = function advancedMarker(lat, lng, info, colour) {
 	Scope.map.addMarkerWithData(new mxn.Marker( new mxn.LatLonPoint(lat, lng)),{
         infoBubble : info,
         label : info,
@@ -233,7 +312,7 @@ Scope.addMarker = function advancedMarker(lat, lng, info) {
         marker : 4,
         iconShadow: "resources/marker_shadow.png",
         iconShadowSize : [0,0],
-        icon : "resources/blue_marker.png",
+        icon : "resources/"+colour+"_marker.png",
         iconSize : [20,20],
         draggable : false,
         hover : true
