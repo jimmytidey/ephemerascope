@@ -1,3 +1,6 @@
+
+debug = "true";
+
 Scope = new Object(); 
 
 Scope.apiEndPoint 	= '/ephemerascope/api/index.php';
@@ -89,7 +92,8 @@ Scope.getDirections = function() {
 		if (value.lat <  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng) {Scope.bottomLeft.push(value);}
 		if (value.lat >  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng) {Scope.topLeft.push(value);}
 	}); 
-
+	
+	//in each quadrent, sort the markers by their radial distance 
 	Scope.topRight.sort(function(a,b) {
 		// assuming distance is always a valid integer
 		return (b.radial_distance) - (a.radial_distance);
@@ -110,86 +114,144 @@ Scope.getDirections = function() {
 		return (b.radial_distance) - (a.radial_distance);
 	});	
 	
+	//produce a list of markers that can be handed to the directions API 
 	Scope.wayPoints.push(Scope.topRight[0]['lat']+","+Scope.topRight[0]['lng']);
 	Scope.wayPoints.push(Scope.bottomRight[0]['lat']+","+Scope.bottomRight[0]['lng']);
 	Scope.wayPoints.push(Scope.bottomLeft[0]['lat']+","+Scope.bottomLeft[0]['lng']);
 	Scope.wayPoints.push(Scope.topLeft[0]['lat']+","+Scope.topLeft[0]['lng']);
 	
-	
+	/*
 	//test those markers...
 	Scope.addMarker(Scope.mapCenter.lat, Scope.mapCenter.lng, 'centre ', "purple");
 	Scope.addMarker(Scope.bottomRight[0]['lat'], Scope.bottomRight[0]['lng'], 'bottom right ', "purple");
 	Scope.addMarker(Scope.bottomLeft[0]['lat'], Scope.bottomLeft[0]['lng'], 'bottom left', "purple");
 	Scope.addMarker(Scope.topLeft[0]['lat'], Scope.topLeft[0]['lng'], 'top left', "purple");
 	Scope.addMarker(Scope.topRight[0]['lat'], Scope.topRight[0]['lng'], 'top left', "purple");
+	*/
 	
+	
+	//send the markers to the API 
 	var wayPointString = escape(Scope.wayPoints.join('|'));
 	
 	var directionsEndPoint = "api/directions.php?";
 
-	var directionsQuery ="origin="+Scope.wayPoints[0]+"&destination="+Scope.wayPoints[0]+"&waypoints="+wayPointString+"&sensor=true";
+	var directionsQuery ="origin="+Scope.mapCenter.lat+","+Scope.mapCenter.lng+"&destination="+Scope.mapCenter.lat+","+Scope.mapCenter.lng+"&waypoints="+wayPointString+"&sensor=true";
+	
 	var directionsUrl = directionsEndPoint + directionsQuery; 
 	
+	//send the query
 	$.getJSON(directionsUrl,  function(directionsData) {
+		
 		Scope.directionsData = eval(directionsData);
 		
-		var waypoints = new Array();
+		Scope.directionsPolyline = new Array();
 		
-		$('#directions').html(""); //get rid of any existing directions
-		
+		$('#directions').html("<div id='directions'"); //get rid of any existing directions
+			
+		//loop through each leg of the journey (there is one leg per waypoint)
 		$.each(Scope.directionsData['routes'][0]['legs'], function(index, value) { 
 	 		
-			waypoints.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
+			console.warn("processing a new leg");
 			
-			//write the directions into a list 
-			$('#directions').append(value.html_instructions+"<br/><hr/>"); 
+			$('#directions').append("<div class='diections_leg'");
 			
-			photos = Scope.locatePhotosOnPath.search(value['start_location']['lat'], value['start_location']['lng'], value['end_location']['lat'], value['end_location']['lng'], value['distance']['value']);
-			
-			$.each(photos, function (index, value) {
+			//each leg consists of a number of steps 
+			$.each(value.steps, function (index, value) {
 				
-				$('#directions').append("<img src='"+value['url']+"' height='140' />");
+				console.warn("processing a new step"); 
+							
+				Scope.directionsPolyline.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
+					
+				$('#directions').append("<div class='directions_step'><div class='directions_text'>"+ value.html_instructions+"</div>"); 
+
+				$('#directions').append("<div class='directions_photos'>");			
+			
+				
+				//add any photos for this step 
+				photos = Scope.locatePhotosOnPath.search(value['start_location']['lat'], value['start_location']['lng'], value['end_location']['lat'], value['end_location']['lng'], value['distance']['value']);
+			
+				$.each(photos, function (index, value) {
+				
+					$('#directions').append("<img src='"+value['url']+"' height='140' />");
+				});
+			
+			
+				$('#directions').append("</div><br style='clear:both'></div>");
+				
 			});
-			
-			$('#directions').append("<br/><hr/>");
-			
-		});
 		
-		var myPoly = new Polyline(waypoints);
+		}); 
 		
-		Scope.map.addPolyline(myPoly);
+		$('#directions').append("</div>");
+		
+		//draw a line of the route
+		Scope.myPoly = new Polyline(Scope.directionsPolyline);
+		
+		Scope.map.addPolyline(Scope.myPoly);
 	});
 }
+
+
 
 Scope.locatePhotosOnPath = new Object(); 
 
 Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_lng, distance) {
   
-
 	Scope.locatePhotosOnPath.return_array = new Array(); 
 	
 	Scope.locatePhotosOnPath.distance = distance; 
 
-	if (((end_lat - start_lat)!= 0) && ((end_lng - start_lng != 0))) { //use this method if the start and begining coords are not the same 
+	if (end_lat!= start_lat && end_lng != start_lng) { //use this method if the start and begining coords are not the same 
 		
 		console.info("Processing as a line");
 		
-		Scope.locatePhotosOnPath.gradient = (end_lng - start_lng) / (end_lat - start_lat); //gcse maths here I come 
-	
-		console.info("gradient = "+ Scope.locatePhotosOnPath.gradient);
+		if (end_lng - start_lng != 0 ) {
+			Scope.locatePhotosOnPath.gradient = (end_lat - start_lat) / (end_lng - start_lng); //gcse maths here I come 
+		}
 		
-		if (isNaN(Scope.gradient)) {Scope.locatePhotosOnPath.gradient = 0.5; console.info("grad didn't calculate - set to 0.5");};
+		else {Scope.locatePhotosOnPath.gradient = 100000;}
+		
+		if (isNaN(Scope.locatePhotosOnPath.gradient)) {Scope.locatePhotosOnPath.gradient = 0.5; console.info("grad didn't calculate - set to 0.5");};
 	
-		Scope.locatePhotosOnPath.offset   = end_lat/Scope.gradient*end_lng; 
+		console.info("gradient = "+ Scope.locatePhotosOnPath.gradient);	
 	
-		console.info("offset = "+ Scope.locatePhotosOnPath.ofdset); 
+		Scope.locatePhotosOnPath.offset = end_lat - (Scope.locatePhotosOnPath.gradient*end_lng); 
+		
+		console.info("offset = "+ Scope.locatePhotosOnPath.offset); 
 
+		if (debug == "true") {
+			var top_left_lat 		= (Scope.locatePhotosOnPath.gradient * start_lng) + (Scope.locatePhotosOnPath.offset + 0.0002);
+			var top_right_lat 		= (Scope.locatePhotosOnPath.gradient * end_lng) + (Scope.locatePhotosOnPath.offset + 0.0002);
+		
+			var bottom_left_lat 	= (Scope.locatePhotosOnPath.gradient * start_lng) + (Scope.locatePhotosOnPath.offset - 0.0002);
+			var bottom_right_lat 	= (Scope.locatePhotosOnPath.gradient * end_lng) + (Scope.locatePhotosOnPath.offset - 0.0002);
+	 
+			Scope.addMarker(top_left_lat , start_lng, 'top left bound', "purple");
+			Scope.addMarker(top_right_lat, end_lng, 'top right bound ', "purple");
+			Scope.addMarker(bottom_left_lat, start_lng, 'bottom left bound ', "purple");
+			Scope.addMarker(bottom_right_lat, end_lng, 'bottom right bound', "purple");
+			
+			
+			// draw a polyline indicating inclusion length 
+			var testArray = new Array(); 
+		
+		
+			testArray.push(new LatLonPoint(top_left_lat , start_lng ));
+			testArray.push(new LatLonPoint(top_right_lat, end_lng));
+			testArray.push(new LatLonPoint(bottom_left_lat, start_lng));
+			testArray.push(new LatLonPoint(bottom_right_lat, end_lng));
+		
+			console.log(testArray);
+			
+			testPoly = new Polyline(testArray);
+		
+			Scope.map.addPolyline(testPoly);
+		}
+		
 		$.each(Scope.allPoints, function (index, value) {
 		
-			
-	
-			if (value.lat > (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset - 0.005) { //lower bound 
-				if (value.lat < (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset + 0.005) { //upper bound 
+			if (value.lat > (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset - 0.0002) { //lower bound 
+				if (value.lat < (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset + 0.0002) { //upper bound 
 					Scope.locatePhotosOnPath.return_array.push(value); 
 				}
 			}
@@ -197,32 +259,28 @@ Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_ln
 		});
 	}
 	
-	else { //this is just a point 
+	else { //this for processing legs which have identical start and finish points 
 		
 		console.info("Processing as a point"); 
 		
-		if (distance == 0 ) {distance = 100;} 
+		if (distance == 0 ) {distance = 200;} // 
 			
 		Scope.locatePhotosOnPath.degree_radius = distance / 104606;
 		
 		console.info("distance in decimal degress =  "+ Scope.locatePhotosOnPath.degree_radius ); 
 		
 		$.each(Scope.allPoints, function (index, value) {
-		
-			return_array = new Array();
+			if (index < 10 ) {
+				return_array = new Array();
 			
-			var lat_sqr = Math.pow((start_lat - value.lat),  2);
-			var lng_sqr = Math.pow((start_lng - value.lng),  2);
-			var radial_disance =  Math.pow(lat_sqr + lng_sqr,  0.5);
-			
-			console.info("radial distance of this particular point =  "+ radial_disance); 
-			
-			
-			if (radial_disance < Scope.locatePhotosOnPath.degree_radius) { //lower bound 
-				Scope.locatePhotosOnPath.return_array.push(value); 
-			}
-		
-			
+				var lat_sqr = Math.pow((start_lat - value.lat),  2);
+				var lng_sqr = Math.pow((start_lng - value.lng),  2);
+				var radial_disance =  Math.pow(lat_sqr + lng_sqr,  0.5);	
+
+				if (radial_disance < Scope.locatePhotosOnPath.degree_radius) { //lower bound 
+					Scope.locatePhotosOnPath.return_array.push(value); 
+				}
+			}	
 		});
 				
 	}	
@@ -254,8 +312,8 @@ Scope.drawLocationMap = function(position) {
 Scope.drawLondonMap = function() {	
 	
 	//get the coords 
-    Scope.lat =  '51.5001524';  
-    Scope.lng =  '-0.1262362';	
+    Scope.lat =  '51.5001522';  
+    Scope.lng =  '-0.1262360';	
 
 	Scope.map = new Mapstraction('map_canvas', 'openstreetmap');
 

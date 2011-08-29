@@ -29,15 +29,14 @@
 
 	<div data-role="content">	
 		
-		<div id="loader"></div>
+		<center>
+			<a data-role="button" data-inline="true" id='wine_glass'>Wine Glass</a>
+			<div id="loader"></div>
+		</center>
 		
 		<div id="map_canvas"></div>
 		
 		<div id='directions'></div>
-
-		<center>
-			<a data-role="button" data-inline="true" id='wine_glass'>Wine Glass</a>
-		</center>
 			
 	</div><!-- /content -->
 	
