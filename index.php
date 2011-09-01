@@ -27,12 +27,14 @@
 
 <div data-role="page" id='home_page'>
 
-	<div data-role="content">	
+	<div data-role="content" id='content'>	
 		
-		<center>
+		<img src='resources/title.png' id='title_image' />
+		
+		<div id='controls'>
 			<a data-role="button" data-inline="true" id='wine_glass'>Wine Glass</a>
 			<div id="loader"></div>
-		</center>
+		</div>
 		
 		<div id="map_canvas"></div>
 		

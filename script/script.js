@@ -12,6 +12,9 @@ Scope.bottomRight 	= new Array();
 Scope.bottomLeft 	= new Array();
 Scope.topLeft 		= new Array();
 
+Scope.locatePhotosOnPath 	= new Object(); 
+Scope.directions 			= new Object(); 
+
 Scope.scan = function() {
 	Scope.scanApi();
 }
@@ -77,13 +80,13 @@ Scope.scanApi = function() {
 			Scope.allPoints.push(value);
 		});
 	
-		Scope.getDirections(); 
+		Scope.directions.getDirections();  
 	});	
 	
 } 
 
 
-Scope.getDirections = function() {
+Scope.directions.getDirections = function() {
 	
 	//sort the arrays into quadrants
 	$.each(Scope.allPoints, function (index,value) {
@@ -146,14 +149,12 @@ Scope.getDirections = function() {
 		
 		Scope.directionsPolyline = new Array();
 		
-		$('#directions').html("<div id='directions'"); //get rid of any existing directions
+		Scope.directions.html = "<div id='directions'>"; //get rid of any existing directions
 			
 		//loop through each leg of the journey (there is one leg per waypoint)
 		$.each(Scope.directionsData['routes'][0]['legs'], function(index, value) { 
 	 		
 			console.warn("processing a new leg");
-			
-			$('#directions').append("<div class='diections_leg'");
 			
 			//each leg consists of a number of steps 
 			$.each(value.steps, function (index, value) {
@@ -161,28 +162,33 @@ Scope.getDirections = function() {
 				console.warn("processing a new step"); 
 							
 				Scope.directionsPolyline.push(new LatLonPoint(value['start_location']['lat'], value['start_location']['lng']));
-					
-				$('#directions').append("<div class='directions_step'><div class='directions_text'>"+ value.html_instructions+"</div>"); 
-
-				$('#directions').append("<div class='directions_photos'>");			
-			
 				
+				Scope.directions.html += "<div class='directions_step'><p class='directions_text'>"+ value.html_instructions+"</p>";
+					
 				//add any photos for this step 
 				photos = Scope.locatePhotosOnPath.search(value['start_location']['lat'], value['start_location']['lng'], value['end_location']['lat'], value['end_location']['lng'], value['distance']['value']);
 			
 				$.each(photos, function (index, value) {
-				
-					$('#directions').append("<img src='"+value['url']+"' height='140' />");
+					if (index <15 && value.url ) {
+						
+						if (value.point_type == 'flickr') {
+							Scope.directions.html += "<div class='directions_photos'><p>"+value['title']+" - "+value['description']+"<p><img src='"+value['url']+"'  /></div>";
+						}
+						
+						if (value.point_type == 'foursquare') {
+							Scope.directions.html += "<div class='direction_tip'>"+value['name']+"</div>";
+						}
+					}
 				});
 			
-			
-				$('#directions').append("</div><br style='clear:both'></div>");
-				
+				Scope.directions.html += "<br style='clear:both'></div>";
 			});
-		
+			
 		}); 
 		
-		$('#directions').append("</div>");
+		Scope.directions.html += "</div>";
+		
+		$('#directions').html(Scope.directions.html); 
 		
 		//draw a line of the route
 		Scope.myPoly = new Polyline(Scope.directionsPolyline);
@@ -192,8 +198,6 @@ Scope.getDirections = function() {
 }
 
 
-
-Scope.locatePhotosOnPath = new Object(); 
 
 Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_lng, distance) {
   
