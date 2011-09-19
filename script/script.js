@@ -3,7 +3,7 @@ debug = "true";
 
 Scope = new Object(); 
 
-Scope.apiEndPoint 	= '/ephemerascope/api/index.php';
+Scope.apiEndPoint 	= 'api/index.php';
 Scope.allPoints 	= new Array(); //all the points I retrive from all APIS
 Scope.wayPoints	 	= new Array(); //points that are picked out to give to Google directions
 
