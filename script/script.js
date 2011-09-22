@@ -3,7 +3,6 @@ debug = "true";
 
 Scope = new Object(); 
 
-Scope.apiEndPoint 	= 'api/index.php';
 Scope.allPoints 	= new Array(); //all the points I retrive from all APIS
 Scope.wayPoints	 	= new Array(); //points that are picked out to give to Google directions
 
@@ -36,24 +35,25 @@ Scope.scanApi = function() {
 	Scope.bottomRight.length 	= 0;
 	Scope.bottomLeft.length 	= 0;
 	Scope.topLeft.length 		= 0;
-	
-	//put up a loader gif 
-	$('#loader').html('<img src="resources/ajax-loader.gif" alt="loader" />');
-	
+		
 	//zoom in beacuse we can only search a small area 
 	Scope.map.setZoom(15);
 	
 	Scope.mapCenter = Scope.map.getCenter(); 
 	
-	var url = Scope.apiEndPoint+'?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
+	//put up a loader gif 
+	$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_1" />');
+	
+	
+	var url = 'api/foursquare.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
 	$.getJSON(url, function(data) {
 		
-		$('#loader').html('');
+		$('#loader_1').remove();
 		
-		Scope.apiData = eval(data);
+		Scope.apiFourSquareData = eval(data);
 		
 		//foursquare tips 
-		$.each(Scope.apiData['fourSquareTips'], function(index, value) { 
+		$.each(Scope.apiFourSquareData.fourSquareTips, function(index, value) { 
 			Scope.addMarker(value.lat, value.lng, value['name'], "blue");	
 			
 			value['point_type'] = "foursquare"; 
@@ -65,9 +65,20 @@ Scope.scanApi = function() {
 			
 			Scope.allPoints.push(value);
 		});
+	})	
+	
+	//put up a loader gif 
+	$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_2" />');	
+	
+	var url = 'api/flickr.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
+	$.getJSON(url, function(data) {
+		
+		$('#loader_2').remove();
+		
+		Scope.apiFlickrData = eval(data);
 
 		//flickr 
-		$.each(Scope.apiData['flickr'], function(index, value) { 
+		$.each(Scope.apiFlickrData, function(index, value) { 
 			Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />", "red");
 			
 			value['point_type'] = "flickr";	
