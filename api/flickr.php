@@ -17,7 +17,7 @@ else {
 	$json['test_mode'] ='true';
 }
 
-$json	= flickr($lat, $lng);
+$json = flickr($lat, $lng);
 
 
 echo (json_encode($json)); 

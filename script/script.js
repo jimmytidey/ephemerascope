@@ -40,76 +40,115 @@ Scope.scanApi = function() {
 	Scope.map.setZoom(15);
 	
 	Scope.mapCenter = Scope.map.getCenter(); 
-	
-	//put up a loader gif 
-	$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_1" />');
-	
-	
-	var url = 'api/foursquare.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
-	$.getJSON(url, function(data) {
-		
-		$('#loader_1').remove();
-		
-		Scope.apiFourSquareData = eval(data);
-		
-		//foursquare tips 
-		$.each(Scope.apiFourSquareData.fourSquareTips, function(index, value) { 
-			Scope.addMarker(value.lat, value.lng, value['name'], "blue");	
-			
-			value['point_type'] = "foursquare"; 
-			
-			var lat_sqr = Math.pow(value['lat'] - Scope.mapCenter.lat, 2);
-			var lng_sqr = Math.pow(value['lng'] - Scope.mapCenter.lng, 2);
-			
-			value['radial_distance'] = Math.pow((lat_sqr + lng_sqr), 0.5);
-			
-			Scope.allPoints.push(value);
-		});
-	})	
-	
-	//put up a loader gif 
-	$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_2" />');	
-	
-	var url = 'api/flickr.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
-	$.getJSON(url, function(data) {
-		
-		$('#loader_2').remove();
-		
-		Scope.apiFlickrData = eval(data);
 
-		//flickr 
-		$.each(Scope.apiFlickrData, function(index, value) { 
-			Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />", "red");
+	//remove the current directions 
+	$('#directions').html(''); 
+
+	Scope.getFourSquare = function () {
+		//put up a loader gif 
+		$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_1" />');
+
+		var url = 'api/foursquare.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
+		return $.getJSON(url, function(data) {
+		
+			$('#loader_1').remove();
+		
+			Scope.apiFourSquareData = eval(data);
+		
+			//foursquare tips 
+			$.each(Scope.apiFourSquareData.fourSquareTips, function(index, value) { 
+				Scope.addMarker(value.lat, value.lng, value['name'], "blue");	
 			
-			value['point_type'] = "flickr";	
+				value['point_type'] = "foursquare"; 
 			
-			var lat_sqr = Math.pow(value['lat'] - Scope.mapCenter.lat, 2);
-			var lng_sqr = Math.pow(value['lng'] - Scope.mapCenter.lng, 2);
+				var lat_sqr = Math.pow(value['lat'] - Scope.mapCenter.lat, 2);
+				var lng_sqr = Math.pow(value['lng'] - Scope.mapCenter.lng, 2);
 			
-			value['radial_distance'] = Math.pow((lat_sqr + lng_sqr), 0.5);  	
+				value['radial_distance'] = Math.pow((lat_sqr + lng_sqr), 0.5);
 			
-			Scope.allPoints.push(value);
-		});
+				Scope.allPoints.push(value);
+			});
+		})	
+	}
 	
-		Scope.directions.getDirections();  
-	});	
+	Scope.getFlickr = function () {
+		//put up a loader gif 
+		$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_2" />');	
+	
+		var url = 'api/flickr.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
+		return $.getJSON(url, function(data) {
+		
+			$('#loader_2').remove();
+		
+			Scope.apiFlickrData = eval(data);
+
+			//flickr 
+			$.each(Scope.apiFlickrData, function(index, value) { 
+				Scope.addMarker(value.lat, value.lng, "<img src='"+value['url']+"' height='140' />", "red");
+			
+				value['point_type'] = "flickr";	
+			
+				var lat_sqr = Math.pow(value['lat'] - Scope.mapCenter.lat, 2);
+				var lng_sqr = Math.pow(value['lng'] - Scope.mapCenter.lng, 2);
+			
+				value['radial_distance'] = Math.pow((lat_sqr + lng_sqr), 0.5);  	
+			
+				Scope.allPoints.push(value);
+			});
+		
+		});	
+	}
+	
+	
+	$.when(Scope.getFourSquare(), Scope.getFlickr())
+	   .then(function(){
+			alert('hi')
+	      Scope.directions.getDirections();
+	   })
+	   .fail(function(){
+	      console.log( 'Ajax requests failed' );
+	   });	
 	
 } 
 
 
 Scope.directions.getDirections = function() {
 	
-	//sort the arrays into quadrants
+	//put the loading graphic in 
+	$('#directions').append('<div id="loader_4">Directions: <img src="resources/ajax-loader.gif" alt="loader"  /></div>');
+	
+	//find out what the average distance from the center 
+	Scope.aggregateRadialDistance = 0 ; 
+	 
 	$.each(Scope.allPoints, function (index,value) {
-		if (value.lat >  Scope.mapCenter.lat && value.lng >  Scope.mapCenter.lng) {Scope.topRight.push(value);}
-		if (value.lat <  Scope.mapCenter.lat && value.lng >  Scope.mapCenter.lng) {Scope.bottomRight.push(value);}
-		if (value.lat <  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng) {Scope.bottomLeft.push(value);}
-		if (value.lat >  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng) {Scope.topLeft.push(value);}
+		Scope.aggregateRadialDistance += value.radial_distance;
+	});
+	
+	Scope.averageRadialDistance = Scope.aggregateRadialDistance / Scope.allPoints.length;
+	
+	//set a variable in each array to inicate whether the point is sufficiently close or not 
+	$.each(Scope.allPoints, function (index,value) {
+		if (value.radial_distance > (2 * Scope.averageRadialDistance)) {
+			Scope.allPoints[index]['in_range'] = false;
+		}
+		
+		else {
+			Scope.allPoints[index]['in_range'] = true;	
+		}
+	});
+	
+	
+	//sort any in range points into quadrants
+	$.each(Scope.allPoints, function (index,value) {
+		if (value.lat >  Scope.mapCenter.lat && value.lng >  Scope.mapCenter.lng && value.in_range) {Scope.topRight.push(value);}
+		if (value.lat <  Scope.mapCenter.lat && value.lng >  Scope.mapCenter.lng && value.in_range) {Scope.bottomRight.push(value);}
+		if (value.lat <  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng && value.in_range) {Scope.bottomLeft.push(value);}
+		if (value.lat >  Scope.mapCenter.lat && value.lng <  Scope.mapCenter.lng && value.in_range) {Scope.topLeft.push(value);}
 	}); 
 	
 	//in each quadrent, sort the markers by their radial distance 
 	Scope.topRight.sort(function(a,b) {
-		// assuming distance is always a valid integer
+		var return_val = (b.radial_distance) - (a.radial_distance)
 		return (b.radial_distance) - (a.radial_distance);
 	});
 	
@@ -198,6 +237,8 @@ Scope.directions.getDirections = function() {
 		}); 
 		
 		Scope.directions.html += "</div>";
+		
+		$('#loader_4').remove();
 		
 		$('#directions').html(Scope.directions.html); 
 		
@@ -383,8 +424,7 @@ Scope.addMarker = function advancedMarker(lat, lng, info, colour) {
         label : info,
         date : "new Date()",
         marker : 4,
-        iconShadow: "resources/marker_shadow.png",
-        iconShadowSize : [0,0],
+		shadowIcon : '',
         icon : "resources/"+colour+"_marker.png",
         iconSize : [20,20],
         draggable : false,
