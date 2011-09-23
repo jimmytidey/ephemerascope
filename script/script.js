@@ -1,5 +1,5 @@
 
-debug = "true";
+debug = "false";
 
 Scope = new Object(); 
 
@@ -46,7 +46,7 @@ Scope.scanApi = function() {
 
 	Scope.getFourSquare = function () {
 		//put up a loader gif 
-		$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_1" />');
+		$('#loader').append('<div id="loader_1">Foursquare: <img src="resources/ajax-loader.gif" alt="loader" class="loader"  /></div>');
 
 		var url = 'api/foursquare.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
 		return $.getJSON(url, function(data) {
@@ -73,7 +73,7 @@ Scope.scanApi = function() {
 	
 	Scope.getFlickr = function () {
 		//put up a loader gif 
-		$('#loader').append('<img src="resources/ajax-loader.gif" alt="loader" id="loader_2" />');	
+		$('#loader').append('<div id="loader_2">Flickr: <img src="resources/ajax-loader.gif" alt="loader" class="loader"  /></div>');	
 	
 		var url = 'api/flickr.php?lat='+Scope.mapCenter.lat+'&lng='+Scope.mapCenter.lng; 
 		return $.getJSON(url, function(data) {
@@ -125,6 +125,15 @@ Scope.directions.getDirections = function() {
 	});
 	
 	Scope.averageRadialDistance = Scope.aggregateRadialDistance / Scope.allPoints.length;
+	
+	//adjust zoom to spread of points 
+	if (Scope.averageRadialDistance < 0.5 ) {
+		Scope.map.setZoom(16);
+	}
+	
+	if (Scope.averageRadialDistance > 1 ) {
+		Scope.map.setZoom(14);
+	}	
 	
 	//set a variable in each array to inicate whether the point is sufficiently close or not 
 	$.each(Scope.allPoints, function (index,value) {
@@ -308,7 +317,12 @@ Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_ln
 		
 			if (value.lat > (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset - 0.0002) { //lower bound 
 				if (value.lat < (Scope.locatePhotosOnPath.gradient * value.lng) + Scope.locatePhotosOnPath.offset + 0.0002) { //upper bound 
-					Scope.locatePhotosOnPath.return_array.push(value); 
+					if (!value.used) {
+						Scope.locatePhotosOnPath.return_array.push(value); 
+					
+						//indicate this photo has been used so we don't add it twice 
+						Scope.allPoints[index]['used'] = true;
+					}	 
 				}
 			}
 	
@@ -334,7 +348,12 @@ Scope.locatePhotosOnPath.search = function(start_lat, start_lng, end_lat, end_ln
 				var radial_disance =  Math.pow(lat_sqr + lng_sqr,  0.5);	
 
 				if (radial_disance < Scope.locatePhotosOnPath.degree_radius) { //lower bound 
-					Scope.locatePhotosOnPath.return_array.push(value); 
+					if (!value.used) {
+						Scope.locatePhotosOnPath.return_array.push(value); 
+					
+						//indicate this photo has been used so we don't add it twice 
+						Scope.allPoints[index]['used'] = true;
+					}	 
 				}
 			}	
 		});
